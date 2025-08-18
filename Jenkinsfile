@@ -42,9 +42,9 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        docker run --rm -v $(pwd):/workspace -w /workspace mikefarah/yq:latest yq e -i ".backend.image.tag = \"1.${BUILD_NUMBER}.0\"" values.yaml
-                        docker run --rm -v $(pwd):/workspace -w /workspace mikefarah/yq:latest yq e -i ".version = \"0.1.${BUILD_NUMBER}\"" Chart.yaml
-                        '''                    // Commit and push changes
+                        docker run --rm -v $(pwd):/workspace -w /workspace mikefarah/yq:latest yq e ".backend.image.tag = \"1.${BUILD_NUMBER}.0\"" -i values.yaml
+                        docker run --rm -v $(pwd):/workspace -w /workspace mikefarah/yq:latest yq e ".version = \"0.1.${BUILD_NUMBER}\"" -i Chart.yaml
+                        '''
 
                     sh "git config --local user.email 'jenkins@example.com'"
                     sh "git config --local user.name 'Jenkins'"
