@@ -41,13 +41,22 @@ pipeline {
         stage('Update Helm Chart pipeline') {
             steps {
                 script {
-                    sh """
-                        wget https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64 -O yq
-                        chmod +x yq
-                        ./yq e '.backend.image.tag = "1.${BUILD_NUMBER}.0"' -i values.yaml
-                        ./yq e '.version = "0.1.${BUILD_NUMBER}"' -i Chart.yaml
-                        """
+                    // Use groovy to update values.yaml
+                    def valuesFile = readFile('values.yaml')
+                    def chartFile = readFile('Chart.yaml')
+                    def Yaml = new org.yaml.snakeyaml.Yaml()
 
+                    def values = Yaml.load(valuesFile)
+                    def chart = Yaml.load(chartFile)
+
+                    values.backend.image.tag = "1.${env.BUILD_NUMBER}.0"
+                    chart.version = "0.1.${env.BUILD_NUMBER}"
+
+                    // Write updated YAML back to files
+                    writeFile file: 'values.yaml', text: Yaml.dump(values)
+                    writeFile file: 'Chart.yaml', text: Yaml.dump(chart)
+
+                    // git commit and push
                     sh "git config --local user.email 'jenkins@example.com'"
                     sh "git config --local user.name 'Jenkins'"
                     sh "git add ."
