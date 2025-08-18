@@ -1,0 +1,30 @@
+version: '3.8'
+# This compose files are used to test locally
+
+services:
+  db:
+    image: postgres:latest
+    container_name: local_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: esteban
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: mydb
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  backend:
+    image: esteban1930/backend-1:local-distroless-test
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=esteban
+      - DB_PASSWORD=secret
+      - DB_NAME=mydb
+      - PORT=8080

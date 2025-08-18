@@ -10,10 +10,10 @@ RUN cargo test --release
 
 RUN cargo build --release
 
-FROM debian:bullseye-slim
+FROM gcr.io/distroless/cc-debian12
 
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /usr/src/app/target/release/backend /backend
 
-COPY --from=builder /usr/src/app/target/release/backend /usr/local/bin/backend
+EXPOSE 8080
 
-CMD ["backend"]
+CMD ["/backend"]
