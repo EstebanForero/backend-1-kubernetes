@@ -1,11 +1,12 @@
 use axum::{
     Json, Router,
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
 };
 use serde::Deserialize;
+use tokio::time::Instant;
 use tower_http::cors::CorsLayer;
 use tracing::{error, info};
 
@@ -58,6 +59,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(health_check))
+        .route("/compute", get(compute))
         .route("/product", post(add_product).get(get_products))
         .with_state(pg_rp)
         .layer(cors);
@@ -66,6 +68,21 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(ip_addr).await.unwrap();
 
     axum::serve(listener, app).await.unwrap()
+}
+
+async fn compute(Path(fibonaci): Path<usize>) -> String {
+    let start = Instant::now();
+
+    let mut a = 0;
+    let mut b = 1;
+    for _ in 0..fibonaci {
+        let temp = a;
+        a = b;
+        b = temp + b;
+    }
+    let duration = start.elapsed();
+
+    format!("Computed fibonacci in {:?}, the result being {b}", duration)
 }
 
 async fn health_check() -> &'static str {
