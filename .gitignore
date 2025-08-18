@@ -1,2 +1,5 @@
 /target
 .env
+
+# Ignore postgres data directory
+pgdata/
