@@ -1,8 +1,17 @@
-use axum::{Router, extract::State, response::IntoResponse, routing::get};
+use axum::{
+    Json, Router,
+    extract::State,
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+};
 use serde::Deserialize;
 use tracing::{error, info};
 
-use crate::database::PostgresRepo;
+use crate::{
+    database::PostgresRepo,
+    entities::{Product, ProductCreator},
+};
 
 #[derive(Debug, Deserialize)]
 struct Config {
@@ -21,7 +30,7 @@ pub mod entities;
 async fn main() {
     tracing_subscriber::fmt().init();
 
-    match dotenvy::from_filename(".env.dev") {
+    match dotenvy::dotenv() {
         Ok(_) => info!("ENV variables loaded from the .env file"),
         Err(_) => info!(".env file doesn't exist, skipping step"),
     }
@@ -46,6 +55,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(health_check))
+        .route("/product", post(add_product).get(get_products))
         .with_state(pg_rp);
 
     let ip_addr = format!("0.0.0.0:{}", config.port);
@@ -58,4 +68,27 @@ async fn health_check() -> &'static str {
     "I am alive"
 }
 
-async fn add_product(State(pg_rp): State<PostgresRepo>) -> impl IntoResponse {}
+async fn add_product(
+    State(pg_rp): State<PostgresRepo>,
+    Json(product): Json<ProductCreator>,
+) -> impl IntoResponse {
+    match pg_rp.create_product(product.into()).await {
+        Ok(_) => StatusCode::OK,
+        Err(err) => {
+            error!("Error in add prodct endpoint: {}", err);
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+async fn get_products(
+    State(pg_rp): State<PostgresRepo>,
+) -> Result<impl IntoResponse, impl IntoResponse> {
+    match pg_rp.get_products().await {
+        Ok(products) => Ok(Json(products)),
+        Err(err) => {
+            error!("Error in get products endpoint: {}", err);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
