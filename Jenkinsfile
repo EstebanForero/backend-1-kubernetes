@@ -19,7 +19,7 @@ pipeline {
                     } else {
                         def shortCommit = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
 
-                        def sanitizedBranchName = env.BRANCH_NAME.replace('/', '-')
+                        def sanitizedBranchName = (env.BRANCH_NAME?.replace('/', '-')) ?: 'nobranch'
                         env.IMAGE_TAG = "${sanitizedBranchName}-${shortCommit}"
                         echo "Build iniciado por una rama. Se usará la etiqueta de desarrollo: ${env.IMAGE_TAG}"
                     }
