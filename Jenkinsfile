@@ -3,48 +3,32 @@ pipeline {
 
     environment {
         DOCKERHUB_USERNAME = "esteban1930"
+
         APP_NAME = "backend-1"
+
         DOCKER_CREDENTIALS_ID = "dockerhub-credentials"
-        IMAGE_TAG = ""
     }
 
     stages {
-        stage('Determine Image Tag') {
-            steps {
-                script {
-                    if (env.TAG_NAME) {
-
-                        env.IMAGE_TAG = env.TAG_NAME.replaceFirst('^v', '')
-                        echo "Build iniciado por Git tag. Se usará la etiqueta de imagen: ${env.IMAGE_TAG}"
-                    } else {
-                        def shortCommit = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-
-                        def sanitizedBranchName = (env.BRANCH_NAME?.replace('/', '-')) ?: 'nobranch'
-                        env.IMAGE_TAG = "${sanitizedBranchName}-${shortCommit}"
-                        echo "Build iniciado por una rama. Se usará la etiqueta de desarrollo: ${env.IMAGE_TAG}"
-                    }
-                }
-            }
-        }
-
         stage('Build, Test, and Push Image') {
             steps {
                 script {
-                    echo "Iniciando build de Docker con la etiqueta: ${env.IMAGE_TAG}..."
-                    echo "Esto compilará, probará y empaquetará la aplicación Rust."
+                    echo "Starting Docker build..."
+                    echo "This will compile, test, and package the Rust application."
                     
-                    def imageName = "${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:${env.IMAGE_TAG}"
+                    def imageName = "${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:1.${env.BUILD_NUMBER}.0"
                     def customImage
 
                     try {
                         customImage = docker.build(imageName)
 
                     } catch (e) {
-                        echo "El build de Docker falló. Revisa los logs por errores de compilación o test. ${e.message}"
-                        error "Build fallido."
+                        // This block catches the error if the build fails (e.g., test failure)
+                        echo "Docker build failed. Check the logs for test failures or compilation errors. ${e.message}"
+                        error "Build failed."
                     }
 
-                    echo "Build y tests exitosos. Empujando la imagen a Docker Hub..."
+                    echo "Build and tests succeeded. Pushing image to Docker Hub..."
                     docker.withRegistry("https://index.docker.io/v1/", env.DOCKER_CREDENTIALS_ID) {
                         customImage.push()
                     }
@@ -55,7 +39,7 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline finalizado."
+            echo "Pipeline finished."
             cleanWs()
         }
     }
