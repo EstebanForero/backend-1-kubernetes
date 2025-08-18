@@ -10,10 +10,13 @@ struct Config {
     db_name: String,
 }
 
-fn main() {
+mod database;
+
+#[tokio::main]
+async fn main() {
     tracing_subscriber::fmt().init();
 
-    match dotenvy::dotenv() {
+    match dotenvy::from_filename(".env.dev") {
         Ok(_) => info!("ENV variables loaded from the .env file"),
         Err(_) => info!(".env file doesn't exist, skipping step"),
     }
