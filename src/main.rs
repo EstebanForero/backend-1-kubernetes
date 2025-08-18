@@ -59,7 +59,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(health_check))
-        .route("/compute", get(compute))
+        .route("/compute/{fibonaci}", get(compute))
         .route("/product", post(add_product).get(get_products))
         .with_state(pg_rp)
         .layer(cors);
