@@ -6,6 +6,7 @@ use axum::{
     routing::{get, post},
 };
 use serde::Deserialize;
+use tower_http::cors::CorsLayer;
 use tracing::{error, info};
 
 use crate::{
@@ -53,10 +54,13 @@ async fn main() {
         error!("Error running migrations");
     }
 
+    let cors = CorsLayer::permissive();
+
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/product", post(add_product).get(get_products))
-        .with_state(pg_rp);
+        .with_state(pg_rp)
+        .layer(cors);
 
     let ip_addr = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(ip_addr).await.unwrap();
