@@ -1,4 +1,4 @@
-use axum::{Router, routing::get};
+use axum::{Router, extract::State, response::IntoResponse, routing::get};
 use serde::Deserialize;
 use tracing::{error, info};
 
@@ -15,6 +15,7 @@ struct Config {
 }
 
 mod database;
+pub mod entities;
 
 #[tokio::main]
 async fn main() {
@@ -43,7 +44,9 @@ async fn main() {
         error!("Error running migrations");
     }
 
-    let app = Router::new().route("/health", get(health_check));
+    let app = Router::new()
+        .route("/health", get(health_check))
+        .with_state(pg_rp);
 
     let ip_addr = format!("0.0.0.0:{}", config.port);
     let listener = tokio::net::TcpListener::bind(ip_addr).await.unwrap();
@@ -54,3 +57,5 @@ async fn main() {
 async fn health_check() -> &'static str {
     "I am alive"
 }
+
+async fn add_product(State(pg_rp): State<PostgresRepo>) -> impl IntoResponse {}

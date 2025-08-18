@@ -1,6 +1,7 @@
 use anyhow::Result;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 
+#[derive(Clone)]
 pub struct PostgresRepo {
     pool: PgPool,
 }
@@ -14,5 +15,11 @@ impl PostgresRepo {
 
     pub async fn run_migrations(&self) -> Result<()> {
         Ok(sqlx::migrate!("./migrations").run(&self.pool).await?)
+    }
+
+    pub async fn create_product(&self, product: Product) -> Result<()> {
+        sqlx::query!("INSERT INTO product VALUES ()");
+
+        todo!()
     }
 }
