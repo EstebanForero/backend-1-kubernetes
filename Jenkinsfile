@@ -39,31 +39,18 @@ pipeline {
         }
 
         stage('Update Helm Chart pipeline') {
-            agent {
-                docker {
-                    image 'mikefarah/yq:latest'
-                    args '-u root --entrypoint=cat'
-                    reuseNode true
-                }
-            }
             steps {
                 script {
-                    git branch: env.HELM_CHART_BRANCH,
-                        credentialsId: env.GIT_CREDENTIALS_ID,
-                        url: env.HELM_CHART_REPO
-
-                    // Update image tag in values.yaml
-                    sh "yq e -i '.backend.image.tag = \"1.${env.BUILD_NUMBER}.0\"' values.yaml"
-
-                    // Bump version in Chart.yaml
-                    sh "yq e -i '.version = \"0.1.${env.BUILD_NUMBER}\"' Chart.yaml"
-
+                    sh '''
+                        docker run --rm -v $(pwd):/workspace -w /workspace mikefarah/yq:latest yq e -i '.backend.image.tag = "1.${BUILD_NUMBER}.0"' values.yaml
+                        docker run --rm -v $(pwd):/workspace -w /workspace mikefarah/yq:latest yq e -i '.version = "0.1.${BUILD_NUMBER}"' Chart.yaml
+                        '''
                     // Commit and push changes
                     sh "git config --local user.email 'jenkins@example.com'"
                     sh "git config --local user.name 'Jenkins'"
                     sh "git add ."
                     sh "git commit -m 'Bump version and update image tag'"
-                    sh "git push origin ${env.HELM_CHART_BRANCH}"
+                    sh "git push origin ${HELM_CHART_BRANCH}"
                 }
             }
         }
