@@ -42,6 +42,8 @@ pipeline {
             agent {
                 docker {
                     image 'mikefarah/yq:latest'
+                    args '-u root --entrypoint=cat'
+                    reuseNode true
                 }
             }
             steps {
