@@ -41,10 +41,12 @@ pipeline {
         stage('Update Helm Chart pipeline') {
             steps {
                 script {
-                    sh '''
-                        docker run --rm -v $(pwd):/workspace -w /workspace mikefarah/yq:latest yq e ".backend.image.tag = \"1.${BUILD_NUMBER}.0\"" -i values.yaml
-                        docker run --rm -v $(pwd):/workspace -w /workspace mikefarah/yq:latest yq e ".version = \"0.1.${BUILD_NUMBER}\"" -i Chart.yaml
-                        '''
+                    sh """
+                        wget https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64 -O yq
+                        chmod +x yq
+                        ./yq e '.backend.image.tag = "1.${BUILD_NUMBER}.0"' -i values.yaml
+                        ./yq e '.version = "0.1.${BUILD_NUMBER}"' -i Chart.yaml
+                        """
 
                     sh "git config --local user.email 'jenkins@example.com'"
                     sh "git config --local user.name 'Jenkins'"
