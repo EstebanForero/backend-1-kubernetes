@@ -56,11 +56,15 @@ pipeline {
                                 """
                         }
 
-                        sh "git config --local user.email 'jenkins@example.com'"
-                        sh "git config --local user.name 'Jenkins'"
-                        sh "git add ."
-                        sh "git commit -m 'Bump version and update image tag(s)'"
-                        sh "git push origin ${env.HELM_CHART_BRANCH}"
+                        withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                            sh 'git config --local user.email "jenkins@example.com"'
+                            sh 'git config --local user.name "Jenkins"'
+                            // Set remote using credentials (HTTPS with username:password)
+                            sh 'git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/EstebanForero/parcial-1.git'
+                            sh 'git add .'
+                            sh 'git commit -m "Bump version and update image tag(s)"'
+                            sh 'git push origin master'
+                        }
                     }
                 }
             }
