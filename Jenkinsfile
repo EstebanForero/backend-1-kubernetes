@@ -38,11 +38,6 @@ pipeline {
             }
         }
 
-        parameters {
-            booleanParam(name: 'UPDATE_BACKEND', defaultValue: true, description: 'Update backend image tag?')
-            booleanParam(name: 'UPDATE_FRONTEND', defaultValue: false, description: 'Update frontend image tag?')
-        }
-
         stage('Update Helm Chart pipeline') {
             steps {
                 script {
@@ -50,12 +45,12 @@ pipeline {
                     sh "git clone --branch ${env.HELM_CHART_BRANCH} https://github.com/EstebanForero/parcial-1.git chart"
 
                     dir('chart') {
-                        if (params.UPDATE_BACKEND) {
+                        if (true) {
                             sh """
                                 sed -i '/^backend:/,/^[^ ]/{/tag:/s/tag:[ ]*.*/tag: "1.${BUILD_NUMBER}.0"/}' values.yaml
                                 """
                         }
-                        if (params.UPDATE_FRONTEND) {
+                        if (false) {
                             sh """
                                 sed -i '/^frontend:/,/^[^ ]/{/tag:/s/tag:[ ]*.*/tag: "1.${BUILD_NUMBER}.0"/}' values.yaml
                                 """
