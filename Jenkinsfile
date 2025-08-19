@@ -17,7 +17,7 @@ pipeline {
                 script {
                     echo "Starting Docker build..."
                     echo "This will compile, test, and package the Rust application."
-                    
+
                     def imageName = "${env.DOCKERHUB_USERNAME}/${env.APP_NAME}:1.${env.BUILD_NUMBER}.0"
                     def customImage
 
@@ -41,27 +41,35 @@ pipeline {
         stage('Update Helm Chart pipeline') {
             steps {
                 script {
-                    // Use groovy to update values.yaml
-                    def valuesFile = readFile('values.yaml')
-                    def chartFile = readFile('Chart.yaml')
-                    def Yaml = new org.yaml.snakeyaml.Yaml()
+                    // Clean up any old chart directory
+                    sh 'rm -rf chart'
+                    // Clone the Helm chart repository
+                    sh "git clone --branch ${env.HELM_CHART_BRANCH} https://github.com/EstebanForero/parcial-1.git chart"
 
-                    def values = Yaml.load(valuesFile)
-                    def chart = Yaml.load(chartFile)
+                    // Change directory to chart for file operations
+                    dir('chart') {
+                        // Use groovy to update values.yaml and Chart.yaml
+                        def valuesFile = readFile('values.yaml')
+                        def chartFile = readFile('Chart.yaml')
+                        def Yaml = new org.yaml.snakeyaml.Yaml()
 
-                    values.backend.image.tag = "1.${env.BUILD_NUMBER}.0"
-                    chart.version = "0.1.${env.BUILD_NUMBER}"
+                        def values = Yaml.load(valuesFile)
+                        def chart = Yaml.load(chartFile)
 
-                    // Write updated YAML back to files
-                    writeFile file: 'values.yaml', text: Yaml.dump(values)
-                    writeFile file: 'Chart.yaml', text: Yaml.dump(chart)
+                        values.backend.image.tag = "1.${env.BUILD_NUMBER}.0"
+                        chart.version = "0.1.${env.BUILD_NUMBER}"
 
-                    // git commit and push
-                    sh "git config --local user.email 'jenkins@example.com'"
-                    sh "git config --local user.name 'Jenkins'"
-                    sh "git add ."
-                    sh "git commit -m 'Bump version and update image tag'"
-                    sh "git push origin ${HELM_CHART_BRANCH}"
+                        // Write updated YAML back to files
+                        writeFile file: 'values.yaml', text: Yaml.dump(values)
+                        writeFile file: 'Chart.yaml', text: Yaml.dump(chart)
+
+                        // git commit and push (pushes to the chart repo)
+                        sh "git config --local user.email 'jenkins@example.com'"
+                        sh "git config --local user.name 'Jenkins'"
+                        sh "git add ."
+                        sh "git commit -m 'Bump version and update image tag'"
+                        sh "git push origin ${env.HELM_CHART_BRANCH}"
+                    }
                 }
             }
         }
